@@ -41,9 +41,9 @@ def main():
                                                 p=out_feats_ark)
     with kaldi_io.open_or_fd(ark_scp_output,'wb') as f:
         for utt, feats in kaldi_io.read_mat_scp(inp_feats_scp):
-            mfcc = convert_mfcc_to_fbank(feats)
-            np.save('ark_check4/{u}.npy'.format(u=utt), mfcc)
-            kaldi_io.write_mat(f, mfcc, key=utt)
+            fbank = convert_fbank_to_mfcc(feats)
+            np.save('ark_check4/{u}.npy'.format(u=utt), fbank)
+            kaldi_io.write_mat(f, fbank, key=utt)
 
 
 if __name__ == "__main__":
