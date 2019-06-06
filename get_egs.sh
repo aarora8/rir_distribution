@@ -301,7 +301,7 @@ if [ ! -z $lattice_prune_beam ]; then
 fi
 
 
-lats_rspecifier_clean="ark:gunzip -c ${latdir}_clean/lat.JOB.gz |"
+lats_rspecifier_clean="ark:gunzip -c ${latdir}_clean2/lat.JOB.gz |"
 if [ ! -z $lattice_prune_beam ]; then
   if [ "$lattice_prune_beam" == "0" ] || [ "$lattice_prune_beam" == "0.0" ]; then
     lats_rspecifier_clean="$lats_rspecifier_clean lattice-1best --acoustic-scale=$acwt ark:- ark:- |"
@@ -342,7 +342,7 @@ if [ $stage -le 2 ]; then
 
     $cmd $dir/log/create_valid_subset.log \
       utils/filter_scp.pl $dir/valid_clean_uttlist $dir/lat_special.scp \| \
-      lattice-align-phones --replace-output-symbols=true $latdir/final.mdl scp:- ark:- \| \
+      lattice-align-phones --replace-output-symbols=true ${latdir}_clean2/final.mdl scp:- ark:- \| \
       chain-get-supervision $chain_supervision_all_opts $chaindir/tree $chaindir/0.trans_mdl \
         ark:- ark:- \| \
       nnet3-chain-get-egs $ivector_opts --srand=$srand \
@@ -351,7 +351,7 @@ if [ $stage -le 2 ]; then
         "$valid_feats" ark,s,cs:- "ark:$dir/valid_all.cegs" || exit 1
     $cmd $dir/log/create_train_subset.log \
       utils/filter_scp.pl $dir/train_subset_uttlist $dir/lat_special.scp \| \
-      lattice-align-phones --replace-output-symbols=true $latdir/final.mdl scp:- ark:- \| \
+      lattice-align-phones --replace-output-symbols=true ${latdir}_clean2/final.mdl scp:- ark:- \| \
       chain-get-supervision $chain_supervision_all_opts \
         $chaindir/tree $chaindir/0.trans_mdl ark:- ark:- \| \
       nnet3-chain-get-egs $ivector_opts --srand=$srand \
