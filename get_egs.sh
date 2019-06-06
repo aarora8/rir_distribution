@@ -173,7 +173,8 @@ len_valid_uttlist=$(wc -l < $dir/valid_uttlist)
 awk '{print $1}' $data/utt2spk | \
    utils/filter_scp.pl --exclude $dir/valid_uttlist | \
    utils/shuffle_list.pl 2>/dev/null | \
-   head -$num_utts_subset > $dir/train_subset_uttlist
+   head -$num_utts_subset > $dir/train_subset_uttlist_clean
+cat $dir/train_subset_uttlist_clean | utils/apply_map.pl $data/utt2uniq | sort | uniq >$dir/train_subset_uttlist
 len_trainsub_uttlist=$(wc -l <$dir/train_subset_uttlist)
 
 if [[ $len_valid_uttlist -lt $num_utts_subset ||
@@ -192,7 +193,7 @@ echo "$0: creating egs.  To ensure they are not deleted later you can do:  touch
 echo "$0: feature type is raw"
 feats="ark,s,cs:utils/filter_scp.pl --exclude $dir/valid_uttlist $sdata/JOB/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:- ark:- |"
 valid_feats="ark,s,cs:utils/filter_scp.pl $dir/valid_clean_uttlist ${data}_clean/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:${data}_clean/utt2spk scp:${data}_clean/cmvn.scp scp:- ark:- |"
-train_subset_feats="ark,s,cs:utils/filter_scp.pl $dir/train_subset_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- |"
+train_subset_feats="ark,s,cs:utils/filter_scp.pl $dir/train_subset_uttlist ${data}_clean/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:${data}_clean/utt2spk scp:${data}_clean/cmvn.scp scp:- ark:- |"
 echo $cmvn_opts >$dir/cmvn_opts # caution: the top-level nnet training script should copy this to its own dir now.
 
 tree-info $chaindir/tree | grep num-pdfs | awk '{print $2}' > $dir/info/num_pdfs || exit 1
