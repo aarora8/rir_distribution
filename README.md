@@ -5,3 +5,5 @@ steps/libs/nnet3/train/common.py
 cat combine.cegs | nnet3-chain-copy-egs ark:- ark,scp:combine1.cegs,combine1.scp
 
 cat cegs.1.ark | nnet3-chain-copy-egs ark:- ark,scp:combine2.cegs,combine2.scp
+
+cat cegs.*.ark | nnet3-chain-copy-egs ark:- ark,scp:combine3.cegs,combine3.scp
