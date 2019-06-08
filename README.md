@@ -2,3 +2,4 @@
 preserve model: steps/nnet3/chain/train.py
 steps/libs/nnet3/train/common.py
 
+cat combine.cegs | nnet3-chain-copy-egs ark:- ark,scp:combine1.cegs,combine1.scp
