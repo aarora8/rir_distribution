@@ -676,7 +676,7 @@ def clean_nnet_dir(nnet_dir, num_iters, egs_dir,
 
 
 def remove_model(nnet_dir, iter, num_iters, models_to_combine=None,
-                 preserve_model_interval=100,
+                 preserve_model_interval=10,
                  get_raw_nnet_from_am=True):
     if iter % preserve_model_interval == 0:
         return
@@ -959,7 +959,7 @@ class CommonParser(object):
                                  default="yes")
         self.parser.add_argument("--cleanup", type=str,
                                  action=common_lib.StrToBoolAction,
-                                 choices=["true", "false"], default=False,
+                                 choices=["true", "false"], default=True,
                                  help="Clean up models after training")
         self.parser.add_argument("--cleanup.remove-egs", type=str,
                                  dest='remove_egs', default=True,
