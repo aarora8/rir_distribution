@@ -15,3 +15,5 @@ cat utt2spk | awk -v p=reverb '{printf("%s%s %s\n", p, $1, $1);}' > utt2uniq
 $cmd JOB=1:20 exp/tri4_lats_nodup_aug/log/copy_out_lat.JOB.log   lattice-copy --write-compact=true "ark:gunzip -c exp/tri4_lats_nodup_aug/lat.JOB.gz |" ark,scp:exp/tri4_lats_nodup_aug/lat_tmp.JOB.ark,exp/tri4_lats_nodup_aug/lat_tmp.JOB.scp
 
 
+grep Sum exp/chain/tdnn1a_aug/decode_eval2000_sw1_fsh_fg/score_10_0.0/eval2000_hires.ctm.swbd.filt.sys | utils/best_wer.sh
+
