@@ -17,3 +17,5 @@ $cmd JOB=1:20 exp/tri4_lats_nodup_aug/log/copy_out_lat.JOB.log   lattice-copy --
 
 grep Sum exp/chain/tdnn1a_aug/decode_eval2000_sw1_fsh_fg/score_10_0.0/eval2000_hires.ctm.swbd.filt.sys | utils/best_wer.sh
 
+echo 'bar' | tee -a foo.txt
+
