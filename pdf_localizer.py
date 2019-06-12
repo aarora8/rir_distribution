@@ -9,22 +9,19 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+
 pageid = -1
 xml_path = '/Users/ashisharora/text2.xml'
 doc = minidom.parse(xml_path)
 page1 = doc.getElementsByTagName('page')
 count = 0
 
-
-xMin_list = dict()
-xMax_list = dict()
-yMin_list = dict()
-yMax_list = dict()
+xMin_dict = dict()
+xMax_dict = dict()
+yMin_dict = dict()
+yMax_dict = dict()
 width_list = list()
 height_list = list()
-
-# fig,ax = plt.subplots(1)
-
 fig = plt.figure()
 ax = fig.add_subplot(111, aspect='equal')
 
@@ -39,63 +36,111 @@ for page in page1:
 
     word1 = page.getElementsByTagName('word')
     wordid = 0
-    xMin_list[pageid] = list()
-    yMin_list[pageid] = list()
-    xMax_list[pageid] = list()
-    yMax_list[pageid] = list()
+    xMin_dict[pageid] = list()
+    yMin_dict[pageid] = list()
+    xMax_dict[pageid] = list()
+    yMax_dict[pageid] = list()
     for word in word1:
         wordid += 1
-        # print(wordid)
         xMin = float(word.getAttribute('xMin'))
         yMin = float(word.getAttribute('yMin'))
         xMax = float(word.getAttribute('xMax'))
         yMax = float(word.getAttribute('yMax'))
-        xMin_list[pageid].append(xMin)
-        yMin_list[pageid].append(yMin)
-        xMax_list[pageid].append(xMax)
-        yMax_list[pageid].append(yMax)
+        xMin_dict[pageid].append(xMin)
+        yMin_dict[pageid].append(yMin)
+        xMax_dict[pageid].append(xMax)
+        yMax_dict[pageid].append(yMax)
+
+
+def get_linedict_from_pagelist(xMin_page_list, yMin_page_list, xMax_page_list, yMax_page_list):
+    xMin_line_dict = dict()
+    xMax_line_dict = dict()
+    yMin_line_dict = dict()
+    yMax_line_dict = dict()
+    xMin_line_dict[0] = list()
+    xMax_line_dict[0] = list()
+    yMin_line_dict[0] = list()
+    yMax_line_dict[0] = list()
+    prev_yMin = yMin_page_list[0]
+    line_id = 0
+    for i in range(len(yMin_page_list)):
+        curr_yMin = yMin_page_list[i]
+        if prev_yMin != curr_yMin:
+            prev_yMin = curr_yMin
+            line_id += 1
+            xMin_line_dict[line_id] = list()
+            xMax_line_dict[line_id] = list()
+            yMin_line_dict[line_id] = list()
+            yMax_line_dict[line_id] = list()
+        xMin_line_dict[line_id].append(xMin_page_list[i])
+        yMin_line_dict[line_id].append(yMin_page_list[i])
+        xMax_line_dict[line_id].append(xMax_page_list[i])
+        yMax_line_dict[line_id].append(yMax_page_list[i])
+    return xMin_line_dict, yMin_line_dict, xMax_line_dict, yMax_line_dict
+
+
+def get_linelist_from_linedict(xMin_line_dict, yMin_line_dict, xMax_line_dict, yMax_line_dict):
+    xMin_line_list = list()
+    xMax_line_list = list()
+    yMin_line_list = list()
+    yMax_line_list = list()
+    for lineid in sorted(xMin_line_dict.keys()):
+        xMin_list = xMin_line_dict[lineid]
+        xMax_list = xMax_line_dict[lineid]
+        yMin_list = yMin_line_dict[lineid]
+        yMax_list = yMax_line_dict[lineid]
+        xMin = xMin_list[0]
+        xMax = xMax_list[-1]
+        yMin = yMin_list[0]
+        yMax = yMax_list[0]
+        xMin_line_list.append(xMin)
+        xMax_line_list.append(xMax)
+        yMin_line_list.append(yMin)
+        yMax_line_list.append(yMax)
+    return xMin_line_list, yMin_line_list, xMax_line_list, yMax_line_list
 
 
 doc = fitz.Document('/Users/ashisharora/Desktop/A11_MissionReport.pdf')
-page = doc.loadPage(0)
-pix = page.getPixmap()
-mode = "RGBA" if pix.alpha else "RGB"
-img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
-
-xMin_page_list = xMin_list[0]
-yMin_page_list = yMin_list[0]
-xMax_page_list = xMax_list[0]
-yMax_page_list = yMax_list[0]
-for i in range(len(xMin_page_list)):
-    xMin = xMin_page_list[i]
-    xMax = xMax_page_list[i]
-    yMin = yMin_page_list[i]
-    yMax = yMax_page_list[i]
-    rect1 = patches.Rectangle((xMin, yMin), xMax - xMin, yMax - yMin, linewidth=1, edgecolor='r',
+img_path = '/Users/ashisharora/Desktop/dct/pdf_imgs2/'
+for pageid in range(len(doc)):
+    page = doc.loadPage(pageid)
+    pix = page.getPixmap()
+    mode = "RGBA" if pix.alpha else "RGB"
+    img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
+    xMin_page_list = xMin_dict[pageid]
+    yMin_page_list = yMin_dict[pageid]
+    xMax_page_list = xMax_dict[pageid]
+    yMax_page_list = yMax_dict[pageid]
+    if len(yMax_page_list) == 0:
+        print(pageid)
+        continue
+    print(pageid)
+    xMin_line_dict, yMin_line_dict, xMax_line_dict, yMax_line_dict = get_linedict_from_pagelist(xMin_page_list, yMin_page_list, xMax_page_list, yMax_page_list)
+    xMin_line_list, yMin_line_list, xMax_line_list, yMax_line_list = get_linelist_from_linedict(xMin_line_dict, yMin_line_dict, xMax_line_dict, yMax_line_dict)
+    rect_list = list()
+    for lineid in range(len(xMin_line_list)):
+        # print(lineid)
+        xMin = xMin_line_list[lineid]
+        xMax = xMax_line_list[lineid]
+        yMin = yMin_line_list[lineid]
+        yMax = yMax_line_list[lineid]
+        rect1 = patches.Rectangle((xMin, yMin), xMax - xMin, yMax - yMin, linewidth=1, edgecolor='r',
                               facecolor='none')
-    ax.add_patch(rect1)
-ax.imshow(img)
-# plt.show()
-fig.savefig('/Users/ashisharora/Desktop/dct/plots/img1.png', dpi=600)
-# input("Press the <ENTER> key to continue...")
+        # ax.add_patch(rect1)
+        box = (xMin, yMin, xMax, yMax)
+        if (xMax <= xMin) or (yMax <= yMin):
+            print(lineid)
+            continue
+        if (xMax - xMin) <=5 or (yMax - yMin) <= 2:
+            print(lineid)
+            continue
+        region_initial = img.crop(box)
+        img_name = str(pageid) + '_' + str(lineid) +'.png'
+        full_img_path = img_path + img_name
+        region_initial.save(full_img_path)
+    # ax.imshow(img)
+    # img_name = str(pageid) + '.png'
+    # full_img_path = img_path + img_name
+    # fig.savefig(full_img_path, dpi=600)
+    # ax.clear()
 
-# for i in range(len(doc)):
-#     page = doc.loadPage(i)
-#     pix = page.getPixmap()
-#     mode = "RGBA" if pix.alpha else "RGB"
-#     img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
-#     xMin_page_list = xMin_list[i]
-#     yMin_page_list = yMin_list[i]
-#     xMax_page_list = xMax_list[i]
-#     yMax_page_list = yMax_list[i]
-#     for j in range(len(xMin_page_list)):
-#         xMin = xMin_page_list[j]
-#         xMax = xMax_page_list[j]
-#         yMin = yMin_page_list[j]
-#         yMax = yMax_page_list[j]
-#         rect1 = patches.Rectangle((xMin, yMin), xMax - xMin, yMax - yMin, linewidth=1, edgecolor='r',
-#                               facecolor='none')
-#         ax.add_patch(rect1)
-#     ax.imshow(img)
-#     plt.show()
-#     input("Press the <ENTER> key to continue...")
