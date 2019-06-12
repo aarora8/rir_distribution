@@ -100,9 +100,13 @@ def get_linelist_from_linedict(xMin_line_dict, yMin_line_dict, xMax_line_dict, y
     return xMin_line_list, yMin_line_list, xMax_line_list, yMax_line_list
 
 
+filtered_count = 0
+filtered_count1 = 0
 doc = fitz.Document('/Users/ashisharora/Desktop/A11_MissionReport.pdf')
 img_path = '/Users/ashisharora/Desktop/dct/pdf_imgs2/'
 for pageid in range(len(doc)):
+    full_dir_path = img_path + str(pageid)
+    # os.mkdir(full_dir_path)
     page = doc.loadPage(pageid)
     pix = page.getPixmap()
     mode = "RGBA" if pix.alpha else "RGB"
@@ -119,28 +123,31 @@ for pageid in range(len(doc)):
     xMin_line_list, yMin_line_list, xMax_line_list, yMax_line_list = get_linelist_from_linedict(xMin_line_dict, yMin_line_dict, xMax_line_dict, yMax_line_dict)
     rect_list = list()
     for lineid in range(len(xMin_line_list)):
-        # print(lineid)
         xMin = xMin_line_list[lineid]
         xMax = xMax_line_list[lineid]
         yMin = yMin_line_list[lineid]
         yMax = yMax_line_list[lineid]
         rect1 = patches.Rectangle((xMin, yMin), xMax - xMin, yMax - yMin, linewidth=1, edgecolor='r',
                               facecolor='none')
-        # ax.add_patch(rect1)
         box = (xMin, yMin, xMax, yMax)
         if (xMax <= xMin) or (yMax <= yMin):
             print(lineid)
+            filtered_count += 1
             continue
-        if (xMax - xMin) <=5 or (yMax - yMin) <= 2:
+        if (xMax - xMin) <=30 or (yMax - yMin) <= 2:
             print(lineid)
+            filtered_count1 += 1
             continue
+        ax.add_patch(rect1)
         region_initial = img.crop(box)
         img_name = str(pageid) + '_' + str(lineid) +'.png'
-        full_img_path = img_path + img_name
-        region_initial.save(full_img_path)
-    # ax.imshow(img)
-    # img_name = str(pageid) + '.png'
-    # full_img_path = img_path + img_name
-    # fig.savefig(full_img_path, dpi=600)
-    # ax.clear()
+        full_img_path = full_dir_path + '/' + img_name
+        # region_initial.save(full_img_path, quality=100)
+    ax.imshow(img)
+    img_name = str(pageid) + '.png'
+    full_img_path = img_path + img_name
+    fig.savefig(full_img_path, dpi=600)
+    ax.clear()
 
+print(filtered_count)
+print(filtered_count1)
