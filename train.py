@@ -37,9 +37,7 @@ logger.info('Starting chain model trainer (train.py)')
 
 def get_args():
     """ Get args from stdin.
-
     We add compulsary arguments as named arguments for readability
-
     The common options are defined in the object
     libs.nnet3.train.common.CommonParser.parser.
     See steps/libs/nnet3/train/common.py
@@ -60,6 +58,10 @@ def get_args():
                         should halve --trainer.samples-per-iter.  May be
                         a comma-separated list of alternatives: first width
                         is the 'principal' chunk-width, used preferentially""")
+    parser.add_argument("--image.augmentation-opts", type=str,
+                        dest='image_augmentation_opts',
+                        default=None,
+                        help="Image augmentation options")
 
     # chain options
     parser.add_argument("--chain.lm-opts", type=str, dest='lm_opts',
@@ -263,7 +265,6 @@ def process_args(args):
 
 def train(args, run_opts):
     """ The main function for training.
-
     Args:
         args: a Namespace object with the required parameters
             obtained from the function process_args()
@@ -545,6 +546,7 @@ def train(args, run_opts):
                 shuffle_buffer_size=args.shuffle_buffer_size,
                 frame_subsampling_factor=args.frame_subsampling_factor,
                 run_opts=run_opts,
+                image_augmentation_opts=args.image_augmentation_opts,
                 backstitch_training_scale=args.backstitch_training_scale,
                 backstitch_training_interval=args.backstitch_training_interval,
                 use_multitask_egs=use_multitask_egs)
