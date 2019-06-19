@@ -205,176 +205,6 @@ void ApplyAffineTransform(MatrixBase<BaseFloat> &transform,
 }
 
 /**
-   This function randomly modifies (perturbs) the image by applying different
-   geometric transformations according to the options in 'config'.
-   References: "Digital Image Processing book by Gonzalez and Woods" and
-   "Keras: github.com/fchollet/keras/blob/master/keras/preprocessing/image.py"
-   @param [in] config  Configuration class that says how
-   to perturb the image.
-   @param [in,out] image  The image matrix to be modified.
-   image->NumRows() is the width (number of x values) in
-   the image; image->NumCols() is the height times number
-   of channels/colors (channel varies the fastest).
-*/
-void PerturbImage(const ImageAugmentationConfig &config,
-                  MatrixBase<BaseFloat> *image) {
-  config.Check();
-  FillMode fill_mode = config.GetFillMode();
-  int32 image_width = image->NumRows(),
-      num_channels = config.num_channels,
-      image_height = image->NumCols() / num_channels;
-  if (image->NumCols() % num_channels != 0) {
-    KALDI_ERR << "Number of columns in image must divide the number "
-        "of channels";
-  }
-  // We do an affine transform which
-  // handles flipping, translation, rotation, magnification, and shear.
-  Matrix<BaseFloat> transform_mat(3, 3, kUndefined);
-  transform_mat.SetUnit();
-
-  Matrix<BaseFloat> shift_mat(3, 3, kUndefined);
-  shift_mat.SetUnit();
-  // translation (shift) mat:
-  // [ 1   0  x_shift
-  //   0   1  y_shift
-  //   0   0  1       ]
-  BaseFloat horizontal_shift = (2.0 * RandUniform() - 1.0) *
-      config.horizontal_shift * image_width;
-  BaseFloat vertical_shift = (2.0 * RandUniform() - 1.0) *
-      config.vertical_shift * image_height;
-  shift_mat(0, 2) = round(horizontal_shift);
-  shift_mat(1, 2) = round(vertical_shift);
-  // since we will center the image before applying the transform,
-  // horizontal flipping is simply achieved by setting [0, 0] to -1:
-  if (WithProb(config.horizontal_flip_prob))
-    shift_mat(0, 0) = -1.0;
-
-  Matrix<BaseFloat> rotation_mat(3, 3, kUndefined);
-  rotation_mat.SetUnit();
-  // rotation mat:
-  // [ cos(theta)  -sin(theta)  0
-  //   sin(theta)  cos(theta)   0
-  //   0           0            1 ]
-  if (RandUniform() <= config.rotation_prob) {
-    BaseFloat theta = (2 * config.rotation_degree * RandUniform() -
-                       config.rotation_degree) / 180.0 * M_PI;
-    rotation_mat(0, 0) = cos(theta);
-    rotation_mat(0, 1) = -sin(theta);
-    rotation_mat(1, 0) = sin(theta);
-    rotation_mat(1, 1) = cos(theta);
-  }
-
-  Matrix<BaseFloat> shear_mat(3, 3, kUndefined);
-  shear_mat.SetUnit();
-  // shear mat:
-  // [ 1    -sin(shear)   0
-  //   0     cos(shear)   0
-  //   0     0            1 ]
-
-  Matrix<BaseFloat> zoom_mat(3, 3, kUndefined);
-  zoom_mat.SetUnit();
-  // zoom mat:
-  // [ x_zoom   0   0
-  //   0   y_zoom   0
-  //   0     0      1 ]
-
-  // transform_mat = rotation_mat * shift_mat * shear_mat * zoom_mat:
-  transform_mat.AddMatMat(1.0, shift_mat, kNoTrans,
-                          shear_mat, kNoTrans, 0.0);
-  transform_mat.AddMatMatMat(1.0, rotation_mat, kNoTrans,
-                             transform_mat, kNoTrans,
-                             zoom_mat, kNoTrans, 0.0);
-  if (transform_mat.IsUnit())  // nothing to do
-    return;
-
-  // we should now change the origin of transform to the center of
-  // the image (necessary for flipping, zoom, shear, and rotation)
-  // we do this by using two translations: one before the main transform
-  // and one after.
-  Matrix<BaseFloat> set_origin_mat(3, 3, kUndefined);
-  set_origin_mat.SetUnit();
-  set_origin_mat(0, 2) = image_width / 2.0 - 0.5;
-  set_origin_mat(1, 2) = image_height / 2.0 - 0.5;
-  Matrix<BaseFloat> reset_origin_mat(3, 3, kUndefined);
-  reset_origin_mat.SetUnit();
-  reset_origin_mat(0, 2) = -image_width / 2.0 + 0.5;
-  reset_origin_mat(1, 2) = -image_height / 2.0 + 0.5;
-
-  // transform_mat = set_origin_mat * transform_mat * reset_origin_mat
-  transform_mat.AddMatMatMat(1.0, set_origin_mat, kNoTrans,
-                             transform_mat, kNoTrans,
-                             reset_origin_mat, kNoTrans, 0.0);
-  ApplyAffineTransform(transform_mat, config.num_channels, image, fill_mode);
-}
-
-/**
-  This function scales the shortest size to a size determined by 'config'
-  It also crops the image to a determined size
-*/
-void ScaleAndCropImage(const ImageAugmentationConfig &config,
-                Matrix<BaseFloat> *image) {
-  config.Check();
-  int32 width = image->NumRows(),
-      num_channels = config.num_channels,
-      height = image->NumCols() / num_channels;
-  if (image->NumCols() % num_channels != 0) {
-    KALDI_ERR << "Number of Cols must be divisible by number of channels";
-  }
-  
-  Matrix<BaseFloat> scale_mat(3, 3, kUndefined);
-  scale_mat.SetUnit();
-  int32 scale = RandInt(config.crop_scale_min, config.crop_scale_max);
-  scale_mat(0, 0) = (scale * 1.0) / height;
-  scale_mat(1, 1) = (scale * 1.0) / height;
-
-  int32 new_width = static_cast<int32>(round(width * scale_mat(0, 0)));
-  int32 new_height = static_cast<int32>(round(height * scale_mat(1, 1)));
-  int32 start_row = RandInt(0, new_width - width);
-  int32 start_col = RandInt(0, new_height - height);
-  
-  Matrix<BaseFloat> temp_image(width, height * num_channels);
-  temp_image.SetZero();
-  for (int32 r = start_row; r < start_row + width; r++) {
-    for (int32 c = start_col; c < start_col + height; c++) {
-      BaseFloat r_old = r / scale_mat(0, 0);
-      BaseFloat c_old = c / scale_mat(1, 1); 
-      int32 r1 = static_cast<int32>(floor(r_old));
-      int32 c1 = static_cast<int32>(floor(c_old));
-      int32 r2 = r1 + 1;
-      int32 c2 = c1 + 1;
-
-      if (r2 >= width) {
-        r2 = width - 1;
-        if (r1 >= width) r1 = width - 1;
-      }
-      if (c2 >= height) {
-        c2 = height - 1;
-        if (c1 >= height) c1 = height - 1;
-      }
-
-
-      BaseFloat weight_11 = (r2 - r_old)*(c2 - c_old);
-      BaseFloat weight_12 = (r2 - r_old)*(c_old - c1);
-      BaseFloat weight_21 = (r_old - r1)*(c2 - c_old);
-      BaseFloat weight_22 = (r_old - r1)*(c_old - c1);
-
-      for (int32 ch = 0; ch < num_channels; ch++) {
-        BaseFloat p11 = (*image)(r1, num_channels * c1 + ch);
-        BaseFloat p12 = (*image)(r1, num_channels * c2 + ch);
-        BaseFloat p21 = (*image)(r2, num_channels * c1 + ch);
-        BaseFloat p22 = (*image)(r2, num_channels * c2 + ch);
-        temp_image((r - start_row), num_channels * (c - start_col) + ch) = weight_11 * p11
-            + weight_12 * p12
-            + weight_21 * p21
-            + weight_22 * p22;
-      }
-    }
-  }
-  
-  *image = temp_image;
-}
-
-/**
    This function does image perturbation as directed by 'config'
    The example 'eg' is expected to contain a NnetIo member with the
    name 'input', representing an image.
@@ -400,13 +230,6 @@ void PerturbImageInNnetChainExample(
         KALDI_ASSERT(config.crop_scale_min > 0 && config.crop_scale_max >= config.crop_scale_min);
 
         ScaleAndCropImage(config, &image);
-
-        // modify the indices
-        //int32 num_rows = image.NumRows();
-        //io.indexes.resize(num_rows);
-        //for (int32 i = 0; i < num_rows; i++) {
-        //  io.indexes[i].t = i;
-        //}
       }
 
       // modify the 'io' object.
@@ -416,7 +239,6 @@ void PerturbImageInNnetChainExample(
   if (!found_input)
     KALDI_ERR << "Nnet example to perturb had no NnetIo object named 'input'";
 }
-
 
 }  // namespace nnet3
 }  // namespace kaldi
