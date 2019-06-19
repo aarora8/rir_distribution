@@ -19,3 +19,5 @@ grep Sum exp/chain/tdnn1a_aug/decode_eval2000_sw1_fsh_fg/score_10_0.0/eval2000_h
 
 echo 'bar' | tee -a foo.txt
 
+feat-to-dim scp:feats.scp -
+
