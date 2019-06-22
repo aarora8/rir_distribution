@@ -81,7 +81,7 @@ void freq_mask(Matrix<BaseFloat> *inp_mfcc) {
   Vector<BaseFloat> unit_vect(feats_width);
   unit_vect.Set(1.0);
   Vector<BaseFloat> avg_vect(num_mel);
-  avg_vect.AddMatVec(1.0, *inp_mfcc, kTrans, unit_vect, 0.0);
+  avg_vect.AddMatVec(1.0/feats_width, *inp_mfcc, kTrans, unit_vect, 0.0);
   fbank.AddMatMat(1.0, *inp_mfcc, kNoTrans,
                           idct_matix, kTrans, 0.0);
   for (int32 i = f_zero; i < f_zero+f; i++)
