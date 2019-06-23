@@ -89,7 +89,6 @@ void freq_mask(Matrix<BaseFloat> *inp_mfcc) {
  
   int32 F = 13;
   int32 f = RandInt(1, F);
-  f = 13;
   int32 f_zero = RandInt(0, num_mel-f);
 
   fbank.AddMatMat(1.0, *inp_mfcc, kNoTrans,
@@ -206,3 +205,4 @@ int main(int argc, char *argv[]) {
    return -1;
   }
 }
+
