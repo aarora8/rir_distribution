@@ -63,7 +63,7 @@ void compute_dct_matrix(float cepstral_lifter, Matrix<BaseFloat> *dct_matix) {
   }
 }
 
-void freq_mask(Matrix<BaseFloat> *inp_mfcc) {
+void freq_mask(Matrix<BaseFloat> *inp_mfcc, int32 F, BaseFloat cepstral_lifter) {
   int32 num_frames = inp_mfcc->NumRows(),
       num_mel = inp_mfcc->NumCols();
 
@@ -71,10 +71,9 @@ void freq_mask(Matrix<BaseFloat> *inp_mfcc) {
   Matrix<BaseFloat> fbank(num_frames, num_mel);
   Vector<BaseFloat> unit_vec(num_frames);
   Vector<BaseFloat> avg_vec(num_mel);
-  compute_dct_matrix(22.0, &dct_matix);
-  compute_idct_matrix(22.0, &idct_matix);
+  compute_dct_matrix(cepstral_lifter, &dct_matix);
+  compute_idct_matrix(cepstral_lifter, &idct_matix);
  
-  int32 F = 13;
   int32 f = RandInt(1, F);
   int32 f_zero = RandInt(0, num_mel-f);
   fbank.AddMatMat(1.0, *inp_mfcc, kNoTrans,
@@ -92,46 +91,45 @@ void freq_mask(Matrix<BaseFloat> *inp_mfcc) {
                           dct_matix, kTrans, 0.0);
 }
 
-int time_mask(Matrix<BaseFloat> *inp_mfcc) {
+int time_mask(Matrix<BaseFloat> *inp_mfcc, int32 T) {
   int32 num_frames = inp_mfcc->NumRows(),
       num_mel = inp_mfcc->NumCols();
 
   Matrix<BaseFloat> fbank(num_frames, num_mel);
-  int32 F = 15;
-  int32 f = RandInt(1, F);
-  if (num_frames - f <= 0)
+  int32 t = RandInt(1, T);
+  if (num_frames - t <= 0)
     return 1;
 
-  int32 f_zero = RandInt(0, num_frames-f);
-  int32 f_one;
-  if ((f_zero - f) < 0 && (num_frames - f) < (f_zero + f))
+  int32 t_zero = RandInt(0, num_frames-t);
+  int32 t_one;
+  if ((t_zero - t) < 0 && (num_frames - t) < (t_zero + t))
     return 1;
 
-  if ( f_zero - f > num_frames - f_zero - 2*f) {
-    f_one = RandInt(0, (f_zero - f));
+  if ( t_zero - t > num_frames - t_zero - 2*t) {
+    t_one = RandInt(0, (t_zero - t));
   }
   else {
-    f_one = RandInt((f_zero + f), (num_frames - f));
+    t_one = RandInt((t_zero + t), (num_frames - t));
   }
-  SubMatrix<BaseFloat> segment_zero(*inp_mfcc, f_zero, f, 0, num_mel);
-  SubMatrix<BaseFloat> segment_one(*inp_mfcc, f_one, f, 0, num_mel);
-  Matrix<BaseFloat> copy_zero(f,num_mel), copy_one(f,num_mel);
+  SubMatrix<BaseFloat> segment_zero(*inp_mfcc, t_zero, t, 0, num_mel);
+  SubMatrix<BaseFloat> segment_one(*inp_mfcc, t_one, t, 0, num_mel);
+  Matrix<BaseFloat> copy_zero(t,num_mel), copy_one(t,num_mel);
 
-  copy_zero.CopyFromMat((*inp_mfcc).Range(f_zero, f, 0, num_mel), kNoTrans);
-  copy_one.CopyFromMat((*inp_mfcc).Range(f_one, f, 0, num_mel), kNoTrans);
+  copy_zero.CopyFromMat((*inp_mfcc).Range(t_zero, t, 0, num_mel), kNoTrans);
+  copy_one.CopyFromMat((*inp_mfcc).Range(t_one, t, 0, num_mel), kNoTrans);
   segment_zero.CopyFromMat(copy_one);
   segment_one.CopyFromMat(copy_zero);
   return 0;
 }
 
-void PerturbImageInNnetExample(NnetChainExample *eg) {
+void PerturbImageInNnetExample(NnetChainExample *eg, int32 F, BaseFloat cepstral_lifter) {
   int32 io_size = eg->inputs.size();
   for (int32 i = 0; i < io_size; i++) {
     NnetIo &io = eg->inputs[i];
     if (io.name == "input") {
       Matrix<BaseFloat> image;
       io.features.GetMatrix(&image);
-      freq_mask(&image);
+      freq_mask(&image, F, cepstral_lifter);
       io.features = image;
     }
   }
@@ -162,10 +160,15 @@ int main(int argc, char *argv[]) {
 
     int32 srand_seed = 0;
     bool perform_fmask = false;
+    int32 F = 27;
+    int32 T = 15;
+    BaseFloat cepstral_lifter = 22.0;
     ParseOptions po(usage);
     po.Register("srand", &srand_seed, "Seed for random number generator ");
     po.Register("fmask", &perform_fmask, "Write output in binary mode");
-
+    po.Register("cepstral_lifter", &cepstral_lifter, "Write output in binary mode");
+    po.Register("F", &F, "Write output in binary mode");
+    po.Register("T", &T, "Write output in binary mode");
     po.Read(argc, argv);
     srand(srand_seed);
     if (po.NumArgs() != 2) {
@@ -184,16 +187,4 @@ int main(int argc, char *argv[]) {
       std::string key = example_reader.Key();
       NnetChainExample eg(example_reader.Value());
 
-      if(perform_fmask) {
-        PerturbImageInNnetExample(&eg);
-        num_done++;
-      }
-
-      example_writer.Write(key, eg);
-    }
-    KALDI_LOG << "Performed fmask or tmask on neural-network training images for " << num_done << " images ";
-    return (num_done == 0 ? 1 : 0);
-  } catch(const std::exception &e) {
-    return -1;
-  }
-}
+  
