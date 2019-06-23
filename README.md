@@ -21,3 +21,5 @@ echo 'bar' | tee -a foo.txt
 
 feat-to-dim scp:feats.scp -
 
+nnet3-augment-image --srand=1 --fmask=true ark:/export/b05/aarora8/kaldi.aug/egs/swbd/s5c.bs2/exp/chain/tdnn1a_aug/egs//valid_diagnostic.cegs ark,t:-
+
