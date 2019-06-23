@@ -87,13 +87,10 @@ void freq_mask(Matrix<BaseFloat> *inp_mfcc) {
   compute_dct_matrix(22.0, &dct_matix);
   compute_idct_matrix(22.0, &idct_matix);
  
-  int32 srand_seed = 0;
-  int32 F = 5;
-  srand(srand_seed);
-  int32 f = RandInt(1, 15);
-  f = 10;
+  int32 F = 13;
+  int32 f = RandInt(1, F);
+  f = 13;
   int32 f_zero = RandInt(0, num_mel-f);
-  f_zero = 1;
 
   fbank.AddMatMat(1.0, *inp_mfcc, kNoTrans,
                           idct_matix, kTrans, 0.0);
@@ -105,55 +102,41 @@ void freq_mask(Matrix<BaseFloat> *inp_mfcc) {
   for (int32 i = f_zero; i < f_zero + f; i++)
     for (int32 j = 0; j < num_frames; j++)
           fbank(j,i) = avg_vec(i);
+
   (*inp_mfcc).AddMatMat(1.0, fbank, kNoTrans,
                           dct_matix, kTrans, 0.0);
-  //(*inp_mfcc).Swap(&fbank);
 }
 
-void time_mask(Matrix<BaseFloat> *inp_mfcc) {
+int time_mask(Matrix<BaseFloat> *inp_mfcc) {
   int32 num_frames = inp_mfcc->NumRows(),
       num_mel = inp_mfcc->NumCols();
 
   Matrix<BaseFloat> fbank(num_frames, num_mel);
   int32 F = 15;
   int32 f = RandInt(1, F);
-  f = 15;
   if (num_frames - f <= 0)
-    return;
+    return 1;
 
   int32 f_zero = RandInt(0, num_frames-f);
   int32 f_one;
-  //if (num_frames < 150)
-  //  return;
-  KALDI_LOG << "Num frames  " << num_frames;
-  KALDI_LOG << "f_zero  " << f_zero;
-  KALDI_LOG << "f  " << f;
-
   if ((f_zero - f) < 0 && (num_frames - f) < (f_zero + f))
-    return;
+    return 1;
 
-  KALDI_LOG << "num_frames  " << num_frames << " f zero  " << f_zero << " f " << f;
   if ( f_zero - f > num_frames - f_zero - 2*f) {
-    KALDI_LOG << "f zero  " << f_zero << " f " << f;
     f_one = RandInt(0, (f_zero - f));
   }
   else {
-    KALDI_LOG << "num_frames  " << num_frames << "f zero  " << f_zero << " f " << " f " << f;
     f_one = RandInt((f_zero + f), (num_frames - f));
   }
-
-  KALDI_LOG << "f one  " << f_one;
   SubMatrix<BaseFloat> segment_zero(*inp_mfcc, f_zero, f, 0, num_mel);
   SubMatrix<BaseFloat> segment_one(*inp_mfcc, f_one, f, 0, num_mel);
   Matrix<BaseFloat> copy_zero(f,num_mel), copy_one(f,num_mel);
-  //copy_zero.CopyFromMat(segment_zero, kNoTrans);
-  //copy_one.CopyFromMat(segment_one, kNoTrans);
 
   copy_zero.CopyFromMat((*inp_mfcc).Range(f_zero, f, 0, num_mel), kNoTrans);
   copy_one.CopyFromMat((*inp_mfcc).Range(f_one, f, 0, num_mel), kNoTrans);
   segment_zero.CopyFromMat(copy_one);
   segment_one.CopyFromMat(copy_zero);
-  //(segment_zero).Swap(&segment_one);
+  return 0;
 }
 
 }  // namespace kaldi
@@ -213,8 +196,7 @@ int main(int argc, char *argv[]) {
     for (;!feat_reader.Done(); feat_reader.Next(), num_done++) {
       std::string utt = feat_reader.Key();
       Matrix<BaseFloat> feat(feat_reader.Value());
-      //freq_mask(&feat);
-      time_mask(&feat);
+      freq_mask(&feat);
       feat_writer.Write(utt, feat); 
     }
     KALDI_LOG << "Copied " << num_done << " feature matrices.";
