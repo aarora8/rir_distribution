@@ -23,3 +23,5 @@ feat-to-dim scp:feats.scp -
 
 nnet3-augment-image --srand=1 --fmask=true ark:/export/b05/aarora8/kaldi.aug/egs/swbd/s5c.bs2/exp/chain/tdnn1a_aug/egs//valid_diagnostic.cegs ark,t:-
 
+./steps/nnet3/report/generate_plots.py --is-chain true exp/chain/tdnn1a_ep30_aug exp/chain/tdnn1a_aug exp/chain/tdnn1a_ep30_aug/report
+
