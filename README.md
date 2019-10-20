@@ -25,3 +25,4 @@ nnet3-augment-image --srand=1 --fmask=true ark:/export/b05/aarora8/kaldi.aug/egs
 
 ./steps/nnet3/report/generate_plots.py --is-chain true exp/chain/tdnn1a_ep30_aug exp/chain/tdnn1a_aug exp/chain/tdnn1a_ep30_aug/report
 
+qlogin -l 'hostname=c*,gpu=2,ram_free=4G,mem_free=4G' -now no
