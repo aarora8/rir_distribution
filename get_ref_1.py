@@ -47,11 +47,19 @@ def main():
         ref_file = args.output_path + '/ref_' + sessionid_speakerid.split('_')[0] + '_' + str(
             spkrid_mapping[sessionid_speakerid.split('_')[1]])
         ref_writer = open(ref_file, 'w')
-        text = sessionid_speakerid_dict[sessionid_speakerid]
-        for line in text:
+        combined_ref_file = args.output_path + '/ref_' + sessionid_speakerid.split('_')[0] + '_' + str(
+            spkrid_mapping[sessionid_speakerid.split('_')[1]]) + '_comb'
+        combined_ref_writer = open(combined_ref_file, 'w')
+        utterances = sessionid_speakerid_dict[sessionid_speakerid]
+        text = ''
+        for line in utterances:
+            parts = line.strip().split()
+            text = text + ' ' + ' '.join(parts[1:])
             ref_writer.write(line)
+        combined_utterance = 'utt' + " " + text
+        combined_ref_writer.write(combined_utterance)
+        combined_ref_writer.close()
         ref_writer.close()
-
 
 if __name__ == '__main__':
     main()
