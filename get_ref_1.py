@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument("text_path", type=str,
                         help="path of text files")
     parser.add_argument("output_path", type=str,
-                        help="Output path for per_speaker per_recording_id reference files")
+                        help="Output path for per_session per_speaker reference files")
     args = parser.parse_args()
     return args
 
@@ -23,21 +23,20 @@ def main():
   # find all recording ids present in the text file
   # split text based on recording_id
   #P05_S02_U02_KITCHEN.ENH-0266866-0266958
-  speakerid_sessionid_dict= {}
+  sessionid_speakerid_dict= {}
   spkrid_dict = {}
   for line in open(args.text_path):
     parts = line.strip().split()
     uttid_id = parts[0]
-    spkr_id = '_'.join(uttid_id.strip().split('_')[0:1])
-    speakerid_sessionid = '_'.join(uttid_id.strip().split('_')[0:2])
-    if speakerid_sessionid not in list(speakerid_sessionid_dict.keys()):
-      speakerid_sessionid_dict[speakerid_sessionid]=list()
-    speakerid_sessionid_dict[speakerid_sessionid].append(line)
-    if spkr_id not in list(spkrid_dict.keys()):
-        spkrid_dict[spkr_id] = list()
-    spkrid_dict[spkr_id].append(line)
+    speakerid = uttid_id.strip().split('_')[0]
+    sessionid = uttid_id.strip().split('_')[1]
+    sessionid_speakerid = sessionid + '_' + speakerid
+    if sessionid_speakerid not in list(sessionid_speakerid_dict.keys()):
+      sessionid_speakerid_dict[sessionid_speakerid]=list()
+    sessionid_speakerid_dict[sessionid_speakerid].append(line)
 
-  print(speakerid_sessionid_dict.keys())
+
+  print(sorted(sessionid_speakerid_dict.keys()))
 
   spkrid_mapping = {}
   spkr_num = 1
@@ -47,11 +46,24 @@ def main():
       spkr_num = spkr_num + 1
 
 
-  # write per recording_id text file
-  for speakerid_sessionid in sorted(speakerid_sessionid_dict.keys()):
-    ref_file = args.output_path + '/ref_' + speakerid_sessionid.split('_')[1] + '_' + str(spkrid_mapping[speakerid_sessionid.split('_')[0]])
+  spkrid_mapping = {}
+  spkr_num = 1
+  prev_sessionid = ''
+  for sessionid_speakerid in sorted(sessionid_speakerid_dict.keys()):
+    spkr_id = sessionid_speakerid.strip().split('_')[1]
+    curr_sessionid = sessionid_speakerid.strip().split('_')[0]
+    if prev_sessionid != curr_sessionid:
+      prev_sessionid = curr_sessionid
+      spkr_num = 1
+    if spkr_id not in list(spkrid_mapping.keys()):
+      spkrid_mapping[spkr_id] = spkr_num
+      spkr_num = spkr_num + 1
+  #
+  # # write per recording_id text file
+  for sessionid_speakerid in sorted(sessionid_speakerid_dict.keys()):
+    ref_file = args.output_path + '/ref_' + sessionid_speakerid.split('_')[0] + '_' + str(spkrid_mapping[sessionid_speakerid.split('_')[1]])
     ref_writer = open(ref_file, 'w')
-    text = speakerid_sessionid_dict[speakerid_sessionid]
+    text = sessionid_speakerid_dict[sessionid_speakerid]
     for line in text:
       ref_writer.write(line)
     ref_writer.close()
