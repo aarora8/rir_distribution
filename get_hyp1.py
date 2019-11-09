@@ -13,8 +13,6 @@ def get_args():
                         help="path of text files")
     parser.add_argument("output_path", type=str,
                         help="Output path for per_session per_speaker reference files")
-    parser.add_argument("file_type", type=str,
-                        help="Output path for per_session per_speaker reference files")
     args = parser.parse_args()
     return args
 
@@ -33,11 +31,19 @@ def main():
         sessionid_speakerid_dict[sessionid_speakerid].append(line)
 
     for sessionid_speakerid in sorted(sessionid_speakerid_dict.keys()):
-        ref_file = args.output_path + '/' + args.file_type + '_' + sessionid_speakerid
+        ref_file = args.output_path + '/' + 'hyp' + '_' + sessionid_speakerid
         ref_writer = open(ref_file, 'w')
-        text = sessionid_speakerid_dict[sessionid_speakerid]
-        for line in text:
+        combined_ref_file = args.output_path + '/' + 'hyp' + '_' + sessionid_speakerid + '_comb'
+        combined_ref_writer = open(combined_ref_file, 'w')
+        utterances = sessionid_speakerid_dict[sessionid_speakerid]
+        text = ''
+        for line in utterances:
+            parts = line.strip().split()
+            text = text + ' ' + ' '.join(parts[1:])
             ref_writer.write(line)
+        combined_utterance = 'utt' + " " + text
+        combined_ref_writer.write(combined_utterance)
+        combined_ref_writer.close()
         ref_writer.close()
 
 
