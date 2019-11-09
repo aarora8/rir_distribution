@@ -18,24 +18,28 @@ def get_args():
 
 
 def main():
+    # P05_S02_U02_KITCHEN.ENH-0266866-0266958
+    # S09_U06.ENH-4-704588-704738
     args = get_args()
-    sessionid_speakerid_dict= {}
+    sessionid__micid_speakerid_dict= {}
     for line in open(args.text_path):
         parts = line.strip().split()
         uttid_id = parts[0]
+        temp = uttid_id.strip().split('.')[0]
+        micid = temp.strip().split('_')[1]
         speakerid = uttid_id.strip().split('-')[1]
         sessionid = uttid_id.strip().split('_')[0]
-        sessionid_speakerid = sessionid + '_' + speakerid
-        if sessionid_speakerid not in list(sessionid_speakerid_dict.keys()):
-            sessionid_speakerid_dict[sessionid_speakerid]=list()
-        sessionid_speakerid_dict[sessionid_speakerid].append(line)
+        sessionid__micid_speakerid = sessionid + '_' + micid + '_' + speakerid
+        if sessionid__micid_speakerid not in list(sessionid__micid_speakerid_dict.keys()):
+            sessionid__micid_speakerid_dict[sessionid__micid_speakerid]=list()
+        sessionid__micid_speakerid_dict[sessionid__micid_speakerid].append(line)
 
-    for sessionid_speakerid in sorted(sessionid_speakerid_dict.keys()):
-        ref_file = args.output_path + '/' + 'hyp' + '_' + sessionid_speakerid
+    for sessionid__micid_speakerid in sorted(sessionid__micid_speakerid_dict.keys()):
+        ref_file = args.output_path + '/' + 'hyp' + '_' + sessionid__micid_speakerid
         ref_writer = open(ref_file, 'w')
-        combined_ref_file = args.output_path + '/' + 'hyp' + '_' + sessionid_speakerid + '_comb'
+        combined_ref_file = args.output_path + '/' + 'hyp' + '_' + sessionid__micid_speakerid + '_comb'
         combined_ref_writer = open(combined_ref_file, 'w')
-        utterances = sessionid_speakerid_dict[sessionid_speakerid]
+        utterances = sessionid__micid_speakerid_dict[sessionid__micid_speakerid]
         text = ''
         for line in utterances:
             parts = line.strip().split()
@@ -49,3 +53,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
