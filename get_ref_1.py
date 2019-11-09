@@ -55,37 +55,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-  spkrid_mapping = {}
-  spkr_num = 1
-  for spkr_id in sorted(spkrid_dict.keys()):
-    if spkr_id not in list(spkrid_mapping.keys()):
-      spkrid_mapping[spkr_id] = spkr_num
-      spkr_num = spkr_num + 1
-
-
-  spkrid_mapping = {}
-  spkr_num = 1
-  prev_sessionid = ''
-  for sessionid_speakerid in sorted(sessionid_speakerid_dict.keys()):
-    spkr_id = sessionid_speakerid.strip().split('_')[1]
-    curr_sessionid = sessionid_speakerid.strip().split('_')[0]
-    if prev_sessionid != curr_sessionid:
-      prev_sessionid = curr_sessionid
-      spkr_num = 1
-    if spkr_id not in list(spkrid_mapping.keys()):
-      spkrid_mapping[spkr_id] = spkr_num
-      spkr_num = spkr_num + 1
-  #
-  # # write per recording_id text file
-  for sessionid_speakerid in sorted(sessionid_speakerid_dict.keys()):
-    ref_file = args.output_path + '/ref_' + sessionid_speakerid.split('_')[0] + '_' + str(spkrid_mapping[sessionid_speakerid.split('_')[1]])
-    ref_writer = open(ref_file, 'w')
-    text = sessionid_speakerid_dict[sessionid_speakerid]
-    for line in text:
-      ref_writer.write(line)
-    ref_writer.close()
-
-
-if __name__ == '__main__':
-  main()
