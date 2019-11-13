@@ -28,3 +28,5 @@ nnet3-augment-image --srand=1 --fmask=true ark:/export/b05/aarora8/kaldi.aug/egs
 qlogin -l 'hostname=c*,gpu=2,ram_free=4G,mem_free=4G' -now no
 
 sclite -r chime6/data/stm_S02_U02.ENH_P05_U02 stm -h chime6/data/ctm_S02_U02.ENH_1 ctm -o all stdout | less
+
+cat $dir/alignment_${sessionid}_r${ind_r}h${ind_h}.txt | utils/scoring/wer_per_utt_details.pl --special-symbol "'***'"  > $wer_dir/${recording_id}_r${ind_r}h${ind_h}/wer_details/per_utt
