@@ -34,3 +34,17 @@ cat $dir/alignment_${sessionid}_r${ind_r}h${ind_h}.txt | utils/scoring/wer_per_u
 utils/scoring/wer_per_spk_details.pl data/$dir_name/utt2spk > $wer_dir/${recording_id}_r${ind_r}h${ind_h}_ref_segmentation/wer_details/per_spk
 
 local/wer_output_filter < data/eval_beamformit_dereverb_ref/text > text.filt.txt
+
+
+##if [ $stage -le 4 ]; then
+##  ind_r=1
+##  while IFS=: read -r recording_id spkorder
+##  do
+##    IFS='_'
+##    read -ra hyp_spkr <<< "$spkorder"
+##    ind_r=1
+##    for ind_h in "${hyp_spkr[@]}"; do
+##      ind_r=$(( ind_r + 1 ))
+##    done
+##  done < recordinid_spkorder
+##fi
